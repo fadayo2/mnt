@@ -89,17 +89,45 @@ async function handleRegister() {
   setTimeout(() => switchAuthTab('login'), 1500);
 }
 
+// This function is called by the logout button
 async function handleLogout() {
-  await supabaseClient.auth.signOut();
+  const logoutBtn = document.querySelector('.logout-btn');
+  if (logoutBtn) {
+    logoutBtn.disabled = true;
+    logoutBtn.textContent = '⏳';
+  }
+
+  try {
+    // Only sign out – do NOT clean up UI here
+    await supabaseClient.auth.signOut();
+  } catch (err) {
+    console.error('Sign-out failed:', err);
+    showToast('Sign-out failed: ' + err.message, 'error');
+    if (logoutBtn) {
+      logoutBtn.disabled = false;
+      logoutBtn.textContent = '⏏';
+    }
+    // If sign-out fails, do nothing else
+  }
+  // If successful, the SIGNED_OUT listener will call cleanupAfterLogout()
+}
+
+// This function only resets the UI and state (called by the auth listener)
+function cleanupAfterLogout() {
   AppState.session = null;
   AppState.user = null;
   AppState.tickets = [];
+
+  const logoutBtn = document.querySelector('.logout-btn');
+  if (logoutBtn) {
+    logoutBtn.disabled = false;
+    logoutBtn.textContent = '⏏';
+  }
 
   document.getElementById('app-screen').classList.remove('visible');
   document.getElementById('auth-screen').style.display = 'flex';
   switchAuthTab('login');
 }
-
 /* ── User Profile ── */
 async function fetchUserProfile(userId) {
   const { data: profile, error } = await supabaseClient
@@ -582,7 +610,9 @@ document.addEventListener('keydown', (e) => {
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
-      handleLogout();
+      if (AppState.session !== null) {
+        cleanupAfterLogout();
+      }
     } else if (event === 'SIGNED_IN' && session) {
       bootApp();
     }
