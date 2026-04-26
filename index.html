@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABUAD Maintenance Portal – Supabase</title>
+  <!-- Google Fonts -->
+   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <!-- Supabase JS (UMD for global access) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    /* All your existing CSS styles remain unchanged */
+    /* ... (keep the entire CSS block from the original code) ... */
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     AUTH SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+
+  <!-- Left decorative panel -->
+  <div class="auth-panel-left">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🏛️</div>
+      <div class="auth-logo-text">
+        ABUAD
+        <span>Maintenance Portal</span>
+      </div>
+    </div>
+
+    <h1 class="auth-headline">
+      Report issues,<br>
+      track <em>repairs</em>,<br>
+      stay informed.
+    </h1>
+
+    <p class="auth-subtext">
+      Afe Babalola University's digital platform for campus maintenance — faster reporting, real-time updates.
+    </p>
+
+    <div class="auth-features">
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Submit maintenance tickets in under 2 minutes</span>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Track repair progress in real-time</span>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Get notified when your issue is resolved</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-panel-right">
+    <div class="auth-form-card">
+      <h2>Welcome back</h2>
+      <p>Sign in to access the maintenance portal.</p>
+
+      <!-- Tab switcher: Login / Register -->
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+      </div>
+
+      <!-- Alert messages -->
+      <div class="alert alert-error" id="auth-error"></div>
+      <div class="alert alert-success" id="auth-success"></div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-control" placeholder="yourname@abuad.edu.ng" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()">Sign In →</button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="register-form" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" class="form-control" placeholder="e.g. John Adeyemi" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-role">I am a...</label>
+            <select id="reg-role" class="form-control">
+              <option value="user">Student / Staff</option>
+              <option value="technician">Technician</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="yourname@abuad.edu.ng" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-dept">Department / Unit</label>
+          <input type="text" id="reg-dept" class="form-control" placeholder="e.g. Engineering Faculty" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Min. 6 characters" />
+        </div>
+        <button class="btn btn-gold" onclick="handleRegister()">Create Account →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SCREEN (after login)
+     ══════════════════════════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- Mobile sidebar backdrop -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">
+        <div class="sidebar-logo-icon">🏛️</div>
+        <div class="sidebar-logo-text">
+          ABUAD
+          <small>Maintenance Portal</small>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- Nav items are injected by JS based on user role -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="user-avatar-initials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-user-name">Loading...</div>
+          <div class="user-role" id="sidebar-user-role">—</div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()" title="Sign out">⏏</button>
+      </div>
+    </div>
+  </aside><!-- /sidebar -->
+
+  <!-- ── Main Content ── -->
+  <div class="main-content">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <span class="topbar-title" id="topbar-title">Dashboard</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="topbar-user-greeting" style="font-size:0.85rem;color:var(--gray-500);"></span>
+      </div>
+    </header>
+
+    <!-- Page content area -->
+    <main class="page-content">
+
+      <!-- ═══════ VIEW: DASHBOARD ═══════ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Overview of your maintenance activity</p>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="navigateTo('view-report')">+ Report Issue</button>
+        </div>
+
+        <!-- Summary stats -->
+        <div class="summary-grid" id="dashboard-summary">
+          <div class="summary-card highlight">
+            <div class="summary-card-label">Total Submitted</div>
+            <div class="summary-card-value" id="stat-total">—</div>
+            <div class="summary-card-sub">All time</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Open</div>
+            <div class="summary-card-value" id="stat-open">—</div>
+            <div class="summary-card-sub">Awaiting action</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">In Progress</div>
+            <div class="summary-card-value" id="stat-progress">—</div>
+            <div class="summary-card-sub">Being worked on</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Resolved</div>
+            <div class="summary-card-value" id="stat-resolved">—</div>
+            <div class="summary-card-sub">Completed</div>
+          </div>
+        </div>
+
+        <!-- Recent tickets -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+          <h3 style="font-family:var(--font-display);color:var(--brand-navy);font-size:1.1rem;">Recent Tickets</h3>
+          <button class="btn btn-secondary btn-sm" onclick="navigateTo('view-tickets')">View All</button>
+        </div>
+        <div id="dashboard-recent-tickets">
+          <div class="loading-container"><div class="spinner"></div><p>Loading tickets...</p></div>
+        </div>
+      </div>
+
+      <!-- ═══════ VIEW: REPORT ISSUE ═══════ -->
+      <div class="view" id="view-report">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Report an Issue</h1>
+            <p class="page-subtitle">Fill in the details below and we'll get it sorted</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-header">
+            <h3>🔧 New Maintenance Request</h3>
+            <p>All fields marked are required. Be as specific as possible — it helps us resolve faster.</p>
+          </div>
+          <div class="form-card-body">
+            <div class="alert alert-error" id="ticket-form-error"></div>
+            <div class="alert alert-success" id="ticket-form-success"></div>
+
+            <!-- Category + Priority -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="tk-category">Category *</label>
+                <select id="tk-category" class="form-control">
+                  <option value="">Select category...</option>
+                  <option value="Plumbing">🚿 Plumbing</option>
+                  <option value="Electrical">⚡ Electrical</option>
+                  <option value="Carpentry">🪑 Carpentry / Furniture</option>
+                  <option value="HVAC">❄️ HVAC / Air Conditioning</option>
+                  <option value="Civil">🧱 Civil / Structural</option>
+                  <option value="IT">💻 IT / Network</option>
+                  <option value="General">🔧 General</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Priority Level *</label>
+                <div class="priority-group">
+                  <input type="radio" name="priority" value="Low" id="p-low" class="priority-option" />
+                  <label for="p-low" class="priority-label">Low</label>
+
+                  <input type="radio" name="priority" value="Medium" id="p-medium" class="priority-option" checked />
+                  <label for="p-medium" class="priority-label">Medium</label>
+
+                  <input type="radio" name="priority" value="High" id="p-high" class="priority-option" />
+                  <label for="p-high" class="priority-label">High</label>
+
+                  <input type="radio" name="priority" value="Urgent" id="p-urgent" class="priority-option" />
+                  <label for="p-urgent" class="priority-label">🚨 Urgent</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <div class="form-group">
+              <label class="form-label" for="tk-title">Issue Title *</label>
+              <input type="text" id="tk-title" class="form-control" placeholder="e.g. Ceiling fan not working in Room 204" maxlength="100" />
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label class="form-label" for="tk-description">Description *</label>
+              <textarea id="tk-description" class="form-control" rows="4"
+                placeholder="Describe the issue in detail: when it started, how severe it is, any safety concerns..."></textarea>
+            </div>
+
+            <!-- Location -->
+            <div style="background:var(--gray-50);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-4);">
+              <p style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-400);margin-bottom:var(--space-3);">📍 Location Details</p>
+              <div class="form-row">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="tk-building">Building / Block *</label>
+                  <select id="tk-building" class="form-control">
+                    <option value="">Select building...</option>
+                    <option>Main Auditorium</option>
+                    <option>Engineering Building</option>
+                    <option>Law Faculty</option>
+                    <option>Medical Sciences Building</option>
+                    <option>Social Sciences Block</option>
+                    <option>Male Hostel A</option>
+                    <option>Male Hostel B</option>
+                    <option>Female Hostel A</option>
+                    <option>Female Hostel B</option>
+                    <option>Library Complex</option>
+                    <option>Sports Complex</option>
+                    <option>Administrative Block</option>
+                    <option>ICT Centre</option>
+                    <option>Student Centre</option>
+                    <option>Chapel</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="tk-floor">Floor</label>
+                  <select id="tk-floor" class="form-control">
+                    <option value="">Select floor...</option>
+                    <option>Ground Floor</option>
+                    <option>1st Floor</option>
+                    <option>2nd Floor</option>
+                    <option>3rd Floor</option>
+                    <option>Rooftop</option>
+                    <option>Basement</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:var(--space-4);margin-bottom:0;">
+                <label class="form-label" for="tk-room">Room / Area</label>
+                <input type="text" id="tk-room" class="form-control" placeholder="e.g. Room 204, Male Toilet, Corridor" />
+              </div>
+            </div>
+
+            <button class="btn btn-gold" id="submit-ticket-btn" onclick="handleSubmitTicket()">
+              Submit Maintenance Request →
+            </button>
+          </div>
+        </div>
+      </div><!-- /view-report -->
+
+      <!-- ═══════ VIEW: MY TICKETS ═══════ -->
+      <div class="view" id="view-tickets">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My Tickets</h1>
+            <p class="page-subtitle">Track the status of all your submitted requests</p>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="navigateTo('view-report')">+ New Request</button>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <span class="filter-label">Filter by:</span>
+          <select class="form-control" id="filter-status" onchange="loadMyTickets()">
+            <option value="">All Statuses</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Assigned">Assigned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <select class="form-control" id="filter-category" onchange="loadMyTickets()">
+            <option value="">All Categories</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Carpentry">Carpentry</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Civil">Civil</option>
+            <option value="IT">IT</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+
+        <div id="tickets-list-container">
+          <div class="loading-container"><div class="spinner"></div><p>Loading your tickets...</p></div>
+        </div>
+      </div><!-- /view-tickets -->
+
+    </main><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-screen -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TICKET DETAIL OVERLAY PANEL
+     ══════════════════════════════════════════════════════════ -->
+<div class="overlay-backdrop" id="detail-overlay" onclick="closeDetailPanel(event)">
+  <div class="detail-panel" id="detail-panel">
+    <button class="detail-close" onclick="closeDetailPanel()">✕</button>
+
+    <div id="detail-content">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script defer src="main.js"></script>
+</body>
+</html>
