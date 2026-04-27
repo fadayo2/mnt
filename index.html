@@ -5,15 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ABUAD Maintenance Portal – Supabase</title>
   <!-- Google Fonts -->
-   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap"
+    rel="stylesheet"
+  />
   <!-- Supabase JS (UMD for global access) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     /* All your existing CSS styles remain unchanged */
     /* ... (keep the entire CSS block from the original code) ... */
+
+    /* Extra style for the forgot password link */
+    .forgot-password-link {
+      display: block;
+      margin-top: var(--space-3);
+      font-size: 0.85rem;
+      color: var(--brand-navy);
+      text-decoration: underline;
+      cursor: pointer;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -34,8 +48,8 @@
     </div>
 
     <h1 class="auth-headline">
-      Report issues,<br>
-      track <em>repairs</em>,<br>
+      Report issues,<br />
+      track <em>repairs</em>,<br />
       stay informed.
     </h1>
 
@@ -79,13 +93,27 @@
       <div id="login-form">
         <div class="form-group">
           <label class="form-label" for="login-email">Email Address</label>
-          <input type="email" id="login-email" class="form-control" placeholder="yourname@abuad.edu.ng" autocomplete="email" />
+          <input
+            type="email"
+            id="login-email"
+            class="form-control"
+            placeholder="yourname@abuad.edu.ng"
+            autocomplete="email"
+          />
         </div>
         <div class="form-group">
           <label class="form-label" for="login-password">Password</label>
-          <input type="password" id="login-password" class="form-control" placeholder="Enter your password" autocomplete="current-password" />
+          <input
+            type="password"
+            id="login-password"
+            class="form-control"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
         </div>
         <button class="btn btn-primary" onclick="handleLogin()">Sign In →</button>
+        <!-- ★ Forgot Password link -->
+        <a href="#" class="forgot-password-link" onclick="showForgotPasswordForm()">Forgot Password?</a>
       </div>
 
       <!-- REGISTER FORM -->
@@ -93,7 +121,12 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="reg-name">Full Name</label>
-            <input type="text" id="reg-name" class="form-control" placeholder="e.g. John Adeyemi" />
+            <input
+              type="text"
+              id="reg-name"
+              class="form-control"
+              placeholder="e.g. John Adeyemi"
+            />
           </div>
           <div class="form-group">
             <label class="form-label" for="reg-role">I am a...</label>
@@ -105,17 +138,77 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="reg-email">Email Address</label>
-          <input type="email" id="reg-email" class="form-control" placeholder="yourname@abuad.edu.ng" />
+          <input
+            type="email"
+            id="reg-email"
+            class="form-control"
+            placeholder="yourname@abuad.edu.ng"
+          />
         </div>
         <div class="form-group">
           <label class="form-label" for="reg-dept">Department / Unit</label>
-          <input type="text" id="reg-dept" class="form-control" placeholder="e.g. Engineering Faculty" />
+          <input
+            type="text"
+            id="reg-dept"
+            class="form-control"
+            placeholder="e.g. Engineering Faculty"
+          />
         </div>
         <div class="form-group">
           <label class="form-label" for="reg-password">Password</label>
-          <input type="password" id="reg-password" class="form-control" placeholder="Min. 6 characters" />
+          <input
+            type="password"
+            id="reg-password"
+            class="form-control"
+            placeholder="Min. 6 characters"
+          />
         </div>
         <button class="btn btn-gold" onclick="handleRegister()">Create Account →</button>
+      </div>
+
+      <!-- ★ FORGOT PASSWORD FORM -->
+      <div id="forgot-password-form" style="display:none;">
+        <p style="margin-bottom:var(--space-4); color:var(--gray-500);">
+          Enter your email and we'll send you a reset link.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="reset-email">Email Address</label>
+          <input
+            type="email"
+            id="reset-email"
+            class="form-control"
+            placeholder="yourname@abuad.edu.ng"
+          />
+        </div>
+        <button class="btn btn-primary" onclick="handleForgotPassword()">Send Reset Link →</button>
+        <a
+          href="#"
+          onclick="switchAuthTab('login')"
+          style="display:block; margin-top:var(--space-3); text-align:center; font-size:0.85rem; color:var(--gray-500);"
+        >
+          ← Back to Sign In
+        </a>
+        <div class="alert alert-success" id="reset-success"></div>
+        <div class="alert alert-error" id="reset-error"></div>
+      </div>
+
+      <!-- ★ SET NEW PASSWORD FORM (after clicking reset link) -->
+      <div id="new-password-form" style="display:none;">
+        <h2 style="font-family:var(--font-display); margin-bottom:var(--space-4);">
+          Set New Password
+        </h2>
+        <div class="form-group">
+          <label class="form-label" for="new-password">New Password (min. 6 characters)</label>
+          <input
+            type="password"
+            id="new-password"
+            class="form-control"
+            placeholder="Enter new password"
+          />
+        </div>
+        <button class="btn btn-primary" onclick="handleUpdatePassword()">Update Password →</button>
+        <div class="alert alert-success" id="update-success"></div>
+        <div class="alert alert-error" id="update-error"></div>
       </div>
 
     </div>

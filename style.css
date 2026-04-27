@@ -283,6 +283,16 @@
 
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
 
+    .forgot-password-link {
+      display: block;
+      margin-top: var(--space-3);
+      font-size: 0.85rem;
+      color: var(--brand-navy);
+      text-decoration: underline;
+      cursor: pointer;
+      text-align: center;
+    }
+
     /* Primary button */
     .btn {
       display: inline-flex;
@@ -881,6 +891,7 @@
       z-index: 200;
       align-items: flex-start;
       justify-content: flex-end;
+      overflow-y: scroll;
     }
 
     .overlay-backdrop.show { display: flex; animation: fadeIn 0.2s ease; }

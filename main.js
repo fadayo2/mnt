@@ -1,6 +1,12 @@
+// ═══════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════
 const SUPABASE_URL = 'https://noqfhommfvnbmlsqlaan.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_UIYBrBTGlP7bSIWERpv7dQ_sGgayUSR';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Your deployed Edge Function URL for sending reset emails
+const EDGE_FUNCTION_URL = 'https://noqfhommfvnbmlsqlaan.functions.supabase.co/send-reset-email';
 
 const AppState = {
   session: null,
@@ -9,6 +15,7 @@ const AppState = {
   currentView: 'view-dashboard',
 };
 
+/* ── UI Helpers ── */
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -23,22 +30,33 @@ function switchAuthTab(tab) {
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  // Hide forgot / new-password forms when switching tabs
+  const forgotForm = document.getElementById('forgot-password-form');
+  const newPwdForm = document.getElementById('new-password-form');
+  if (forgotForm) forgotForm.style.display = 'none';
+  if (newPwdForm) newPwdForm.style.display = 'none';
+  document.getElementById('tab-login').style.display = 'inline-block';
+  document.getElementById('tab-register').style.display = 'inline-block';
   clearAuthMessages();
 }
 
 function clearAuthMessages() {
-  ['auth-error', 'auth-success'].forEach(id => {
+  ['auth-error', 'auth-success', 'reset-error', 'reset-success', 'update-error', 'update-success'].forEach(id => {
     const el = document.getElementById(id);
-    el.classList.remove('show');
-    el.textContent = '';
+    if (el) {
+      el.classList.remove('show');
+      el.textContent = '';
+    }
   });
 }
 
 function showAuthMessage(id, message) {
   clearAuthMessages();
   const el = document.getElementById(id);
-  el.textContent = message;
-  el.classList.add('show');
+  if (el) {
+    el.textContent = message;
+    el.classList.add('show');
+  }
 }
 
 /* ── Auth ── */
@@ -114,6 +132,8 @@ async function handleLogout() {
 
 // This function only resets the UI and state (called by the auth listener)
 function cleanupAfterLogout() {
+  supabaseClient.removeAllChannels();   // ★ stop real-time subscriptions
+
   AppState.session = null;
   AppState.user = null;
   AppState.tickets = [];
@@ -128,6 +148,7 @@ function cleanupAfterLogout() {
   document.getElementById('auth-screen').style.display = 'flex';
   switchAuthTab('login');
 }
+
 /* ── User Profile ── */
 async function fetchUserProfile(userId) {
   const { data: profile, error } = await supabaseClient
@@ -167,6 +188,7 @@ async function bootApp() {
 
   buildSidebarNav(AppState.user.role);
   navigateTo('view-dashboard');
+  setupRealtime();   // ★ activate real‑time updates
 }
 
 /* ── Sidebar Nav ── */
@@ -219,6 +241,48 @@ function navigateTo(viewId) {
 async function loadDashboard() {
   try {
     const userId = AppState.user.id;
+    const role = AppState.user.role;
+
+    // For technician (and admin) – show stats for all tickets
+    if (role === 'technician' || role === 'admin') {
+      // Count all tickets (no user filter)
+      const { count: total } = await supabaseClient
+        .from('tickets')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: open } = await supabaseClient
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['Submitted', 'Assigned']);
+
+      const { count: progress } = await supabaseClient
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'In Progress');
+
+      const { count: resolved } = await supabaseClient
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['Resolved', 'Closed']);
+
+      document.getElementById('stat-total').textContent = total || 0;
+      document.getElementById('stat-open').textContent = open || 0;
+      document.getElementById('stat-progress').textContent = progress || 0;
+      document.getElementById('stat-resolved').textContent = resolved || 0;
+
+      // Recent tickets – all, sorted by newest
+      const { data: recent } = await supabaseClient
+        .from('tickets')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      AppState.tickets = recent || [];
+      renderTicketList('dashboard-recent-tickets', recent || []);
+      return;
+    }
+
+    // Normal user – their own tickets (unchanged)
     const { count: total } = await supabaseClient
       .from('tickets')
       .select('*', { count: 'exact', head: true })
@@ -269,10 +333,17 @@ async function loadMyTickets() {
 
   let query = supabaseClient.from('tickets').select('*', { count: 'exact' });
 
-  if (AppState.user.role === 'user') {
-    query = query.eq('user_id', AppState.user.id);
-  } else if (AppState.user.role === 'technician') {
-    query = query.eq('assigned_to', AppState.user.id);
+  const role = AppState.user.role;
+  const userId = AppState.user.id;
+
+  if (role === 'user') {
+    // Normal user: only their own tickets
+    query = query.eq('user_id', userId);
+  } else if (role === 'technician') {
+    // Technician sees ALL tickets (unassigned and assigned, everything)
+    // No user_id filter – just let the status/category filters apply
+  } else if (role === 'admin') {
+    // Admin also sees all tickets – no filter
   }
 
   if (status)   query = query.eq('status', status);
@@ -351,6 +422,7 @@ async function openTicketDetail(ticketId) {
   content.innerHTML = renderDetailPanel(ticket);
 }
 
+/* ── Render Detail Panel with action buttons ── */
 function renderDetailPanel(ticket) {
   const STEPS = [
     { key: 'Submitted',   label: 'Submitted',   icon: '📩' },
@@ -398,6 +470,30 @@ function renderDetailPanel(ticket) {
     const diffHours = ((new Date(ticket.resolved_at) - new Date(ticket.created_at)) / 3600000).toFixed(1);
     resolutionBadge = `<div style="background:var(--gray-50);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);display:inline-block;font-size:0.82rem;color:var(--success);font-weight:600;">⏱ Resolved in ${diffHours} hours</div>`;
   }
+
+  // ═══════ ACTION BUTTONS ═══════
+  let actionsHTML = '';
+  // Technician status progression
+  if (AppState.user.role === 'technician') {
+    if (ticket.status === 'Submitted') {
+      actionsHTML += `<button class="btn btn-primary" style="margin-right:0.5rem;" onclick="updateTicketStatus(${ticket.id}, 'Assigned')">🔧 Take Task</button>`;
+    } else if (ticket.status === 'Assigned') {
+      actionsHTML += `<button class="btn btn-primary" style="margin-right:0.5rem;" onclick="updateTicketStatus(${ticket.id}, 'In Progress')">▶️ Start Work</button>`;
+    } else if (ticket.status === 'In Progress') {
+      actionsHTML += `<button class="btn btn-success" style="margin-right:0.5rem;" onclick="updateTicketStatus(${ticket.id}, 'Resolved')">✅ Mark Resolved</button>`;
+    }
+  }
+
+  // Delete button (only when resolved/closed, for both user and technician)
+  if ((ticket.status === 'Resolved' || ticket.status === 'Closed') &&
+      (AppState.user.role === 'technician' || AppState.user.id === ticket.user_id)) {
+    actionsHTML += `<button class="btn btn-danger" style="margin-right:0.5rem;" onclick="deleteTicket(${ticket.id})">🗑️ Delete Ticket</button>`;
+  }
+
+  const actionsSection = actionsHTML
+    ? `<hr class="detail-divider" />
+       <div style="margin-bottom:var(--space-5);">${actionsHTML}</div>`
+    : '';
 
   return `
     <div>
@@ -463,6 +559,8 @@ function renderDetailPanel(ticket) {
         <div class="detail-field-value">${'⭐'.repeat(ticket.rating)} (${ticket.rating}/5)</div>
       </div>` : ''}
 
+      ${actionsSection}
+
       <hr class="detail-divider" />
       <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-400);margin-bottom:var(--space-4);">Activity History</div>
       <div class="history-timeline">
@@ -474,6 +572,77 @@ function renderDetailPanel(ticket) {
 function closeDetailPanel(event) {
   if (event && event.target !== document.getElementById('detail-overlay')) return;
   document.getElementById('detail-overlay').classList.remove('show');
+}
+
+/* ── Technician: Update ticket status ── */
+async function updateTicketStatus(ticketId, newStatus) {
+  const currentUser = AppState.user;
+
+  const updates = { status: newStatus };
+
+  if (newStatus === 'Assigned' && currentUser.role === 'technician') {
+    updates.assigned_to = currentUser.id;
+  }
+
+  if (newStatus === 'Resolved') {
+    updates.resolved_at = new Date().toISOString();
+  }
+
+  // Fetch current history
+  const { data: ticket, error: fetchErr } = await supabaseClient
+    .from('tickets')
+    .select('status_history')
+    .eq('id', ticketId)
+    .single();
+
+  if (fetchErr) {
+    showToast('Error loading ticket: ' + fetchErr.message, 'error');
+    return;
+  }
+
+  const history = ticket.status_history || [];
+  history.push({
+    status: newStatus,
+    timestamp: new Date().toISOString(),
+    changed_by: { id: currentUser.id, name: currentUser.name },
+    note: '',
+  });
+
+  updates.status_history = history;
+
+  const { error } = await supabaseClient
+    .from('tickets')
+    .update(updates)
+    .eq('id', ticketId);
+
+  if (error) {
+    showToast('Update failed: ' + error.message, 'error');
+  } else {
+    showToast('Status updated to ' + newStatus);
+    openTicketDetail(ticketId);
+    // Refresh lists in background
+    if (AppState.currentView === 'view-dashboard') loadDashboard();
+    if (AppState.currentView === 'view-tickets') loadMyTickets();
+  }
+}
+
+/* ── Delete ticket (both user & technician) ── */
+async function deleteTicket(ticketId) {
+  if (!confirm('Are you sure you want to permanently delete this ticket?')) return;
+
+  const { error } = await supabaseClient
+    .from('tickets')
+    .delete()
+    .eq('id', ticketId);
+
+  if (error) {
+    showToast('Delete failed: ' + error.message, 'error');
+  } else {
+    showToast('Ticket deleted');
+    document.getElementById('detail-overlay').classList.remove('show');
+    if (AppState.currentView === 'view-dashboard') loadDashboard();
+    if (AppState.currentView === 'view-tickets') loadMyTickets();
+  }
 }
 
 /* ── Submit Ticket ── */
@@ -586,6 +755,95 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/* ── Forgot Password ── */
+function showForgotPasswordForm() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'none';
+  const forgotForm = document.getElementById('forgot-password-form');
+  if (forgotForm) forgotForm.style.display = 'block';
+  document.getElementById('tab-login').style.display = 'none';
+  document.getElementById('tab-register').style.display = 'none';
+  clearAuthMessages();
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('reset-email').value.trim();
+  const errorEl = document.getElementById('reset-error');
+  const successEl = document.getElementById('reset-success');
+  if (errorEl) errorEl.classList.remove('show');
+  if (successEl) successEl.classList.remove('show');
+
+  if (!email) {
+    if (errorEl) {
+      errorEl.textContent = 'Please enter your email.';
+      errorEl.classList.add('show');
+    }
+    return;
+  }
+
+  try {
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send reset email.');
+
+    if (successEl) {
+      successEl.textContent = '✅ Reset link sent! Check your inbox.';
+      successEl.classList.add('show');
+    }
+    document.getElementById('reset-email').value = '';
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.classList.add('show');
+    }
+  }
+}
+
+async function handleUpdatePassword() {
+  const password = document.getElementById('new-password').value.trim();
+  const errorEl = document.getElementById('update-error');
+  const successEl = document.getElementById('update-success');
+  if (errorEl) errorEl.classList.remove('show');
+  if (successEl) successEl.classList.remove('show');
+
+  if (password.length < 6) {
+    if (errorEl) {
+      errorEl.textContent = 'Password must be at least 6 characters.';
+      errorEl.classList.add('show');
+    }
+    return;
+  }
+
+  try {
+    const { error } = await supabaseClient.auth.updateUser({ password });
+    if (error) throw error;
+
+    if (successEl) {
+      successEl.textContent = '✅ Password updated! You can now sign in.';
+      successEl.classList.add('show');
+    }
+
+    // Sign out and return to login after a delay
+    setTimeout(async () => {
+      await supabaseClient.auth.signOut();
+      window.location.hash = '';
+      const newPwdForm = document.getElementById('new-password-form');
+      if (newPwdForm) newPwdForm.style.display = 'none';
+      switchAuthTab('login');
+      document.getElementById('auth-screen').style.display = 'flex';
+    }, 2000);
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.classList.add('show');
+    }
+  }
+}
+
 /* ── Keyboard Shortcuts ── */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -599,16 +857,51 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ── Init ── */
-(async function init() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    await bootApp();
+function setupRealtime() {
+  const userId = AppState.user.id;
+  const role = AppState.user.role;
+  supabaseClient.removeAllChannels();
+
+  let filter;
+  if (role === 'technician' || role === 'admin') {
+    // Listen to ALL ticket changes (no filter, or use a filter that matches everything)
+    // Using 'id=neq.0' is a dummy that matches all rows – simpler: empty string to listen to whole table.
+    // The Realtime API requires a filter; we can use 'id=gte.0' (since all IDs >0)
+    filter = 'id=gte.0';
   } else {
-    document.getElementById('auth-screen').style.display = 'flex';
+    filter = `user_id=eq.${userId}`;
   }
 
+  supabaseClient
+    .channel('tickets-realtime')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tickets', filter },
+      () => {
+        if (AppState.currentView === 'view-dashboard') loadDashboard();
+        else if (AppState.currentView === 'view-tickets') loadMyTickets();
+      }
+    )
+    .subscribe();
+}
+
+/* ── Init ── */
+(async function init() {
+  // Listen for password recovery events
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('register-form').style.display = 'none';
+      const forgotForm = document.getElementById('forgot-password-form');
+      if (forgotForm) forgotForm.style.display = 'none';
+      const newPwdForm = document.getElementById('new-password-form');
+      if (newPwdForm) newPwdForm.style.display = 'block';
+      document.getElementById('tab-login').style.display = 'none';
+      document.getElementById('tab-register').style.display = 'none';
+      return;
+    }
+
     if (event === 'SIGNED_OUT') {
       if (AppState.session !== null) {
         cleanupAfterLogout();
@@ -617,4 +910,13 @@ document.addEventListener('keydown', (e) => {
       bootApp();
     }
   });
+
+  // Normal session check on page load
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    await bootApp();
+  } else {
+    // If we are not already in a recovery flow (event will fire later), show login
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
 })();
