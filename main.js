@@ -781,22 +781,25 @@ async function handleForgotPassword() {
     return;
   }
 
-  // Use Supabase's built‑in reset (works with your custom SMTP)
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://mnt-inky.vercel.app/reset-password.html',
-  });
+  try {
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send reset email.');
 
-  if (error) {
-    if (errorEl) {
-      errorEl.textContent = error.message;
-      errorEl.classList.add('show');
-    }
-  } else {
     if (successEl) {
       successEl.textContent = '✅ Reset link sent! Check your inbox.';
       successEl.classList.add('show');
     }
     document.getElementById('reset-email').value = '';
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.classList.add('show');
+    }
   }
 }
 
