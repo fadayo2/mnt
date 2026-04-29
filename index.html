@@ -3,44 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ABUAD Maintenance Portal – Supabase</title>
-  <!-- Google Fonts -->
+  <title>ABUAD Maintenance Portal</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <!-- Supabase JS (UMD for global access) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <style>
-    /* All your existing CSS styles remain unchanged */
-    /* ... (keep the entire CSS block from the original code) ... */
-
-    /* Extra style for the forgot password link */
-    .forgot-password-link {
-      display: block;
-      margin-top: var(--space-3);
-      font-size: 0.85rem;
-      color: var(--brand-navy);
-      text-decoration: underline;
-      cursor: pointer;
-      text-align: center;
-    }
-  </style>
+  <!-- FavIcon -->
+   <link rel="apple-touch-icon" sizes="180x180" href="./favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon/favicon-16x16.png">
+  <link rel="manifest" href="./favicon/site.webmanifest">
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
-     AUTH SCREEN
-     ══════════════════════════════════════════════════════════ -->
+<!-- ═══════  AUTH SCREEN ═══════ -->
 <div id="auth-screen">
 
   <!-- Left decorative panel -->
   <div class="auth-panel-left">
     <div class="auth-logo">
-      <div class="auth-logo-icon">🏛️</div>
+      <div class="auth-logo-icon">
+         <img class="webIcon" src="https://pgcollege.abuad.edu.ng/admin/images/Logo.png" alt="website logo">
+      </div>
       <div class="auth-logo-text">
         ABUAD
         <span>Maintenance Portal</span>
@@ -164,7 +151,7 @@
         <button class="btn btn-gold" onclick="handleRegister()">Create Account →</button>
       </div>
 
-      <!-- ★ FORGOT PASSWORD FORM -->
+      <!-- FORGOT PASSWORD FORM -->
       <div id="forgot-password-form" style="display:none;">
         <p style="margin-bottom:var(--space-4); color:var(--gray-500);">
           Enter your email and we'll send you a reset link.
@@ -190,7 +177,7 @@
         <div class="alert alert-error" id="reset-error"></div>
       </div>
 
-      <!-- ★ SET NEW PASSWORD FORM (after clicking reset link) -->
+      <!-- SET NEW PASSWORD FORM (after clicking reset link) -->
       <div id="new-password-form" style="display:none;">
         <h2 style="font-family:var(--font-display); margin-bottom:var(--space-4);">
           Set New Password
@@ -214,9 +201,7 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════
-     APP SCREEN (after login)
-     ══════════════════════════════════════════════════════════ -->
+<!-- APP SCREEN (after login) -->
 <div id="app-screen">
 
   <!-- Mobile sidebar backdrop -->
@@ -226,7 +211,9 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-mark">
-        <div class="sidebar-logo-icon">🏛️</div>
+        <div class="sidebar-logo-icon">
+         <img class="webIcon" src="https://pgcollege.abuad.edu.ng/admin/images/Logo.png" alt="website logo">
+        </div>
         <div class="sidebar-logo-text">
           ABUAD
           <small>Maintenance Portal</small>
@@ -371,7 +358,7 @@
             <!-- Description -->
             <div class="form-group">
               <label class="form-label" for="tk-description">Description *</label>
-              <textarea id="tk-description" class="form-control" rows="4"
+              <textarea id="tk-description" style="resize: none;" class="form-control" rows="4"
                 placeholder="Describe the issue in detail: when it started, how severe it is, any safety concerns..."></textarea>
             </div>
 
@@ -383,22 +370,35 @@
                   <label class="form-label" for="tk-building">Building / Block *</label>
                   <select id="tk-building" class="form-control">
                     <option value="">Select building...</option>
-                    <option>Main Auditorium</option>
-                    <option>Engineering Building</option>
-                    <option>Law Faculty</option>
-                    <option>Medical Sciences Building</option>
-                    <option>Social Sciences Block</option>
-                    <option>Male Hostel A</option>
-                    <option>Male Hostel B</option>
-                    <option>Female Hostel A</option>
-                    <option>Female Hostel B</option>
-                    <option>Library Complex</option>
-                    <option>Sports Complex</option>
-                    <option>Administrative Block</option>
-                    <option>ICT Centre</option>
-                    <option>Student Centre</option>
-                    <option>Chapel</option>
-                    <option>Other</option>
+                    <option>College of Sciences</option>
+                    <option>College of Law</option>
+                    <option>College of Pharmarcy</option>
+                    <option>College of Medicine</option>
+                    <option>College of Engineering</option>
+                    <option>College of Social and Management Science</option>
+                    <option>Female Hall 1 (ABUAD)</option>
+                    <option>Female Hall 2 (WEMA)</option>
+                    <option>Female Hall 3 (NHF1)</option>
+                    <option>Female Hall 4 (NHF2)</option>
+                    <option>AMSH Female Hall</option>
+                    <option>Summer Hostel</option>
+                    <option>Male Hall 1</option>
+                    <option>Male Hall 2</option>
+                    <option>Male Hall 3</option>
+                    <option>Male Hall 4</option>
+                    <option>Male Hall 5</option>
+                    <option>Male Hall 6</option>
+                    <option>Male Hall 7</option>
+                    <option>Male Medical Hostel 1</option>
+                    <option>Male Medical Hostel 2</option>
+                    <option>PTCF Amphitheatre</option>
+                    <option>Alfa Begore Hall</option>
+                    <option>Owolabi Hall</option>
+                    <option>White Rock</option>
+                    <option>TDC</option>
+                    <option>Cafeteria 1</option>
+                    <option>Cafeteria 2</option>
+                    <option>Medical Cafe</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -471,9 +471,7 @@
 </div><!-- /app-screen -->
 
 
-<!-- ══════════════════════════════════════════════════════════
-     TICKET DETAIL OVERLAY PANEL
-     ══════════════════════════════════════════════════════════ -->
+<!--  ═══════ TICKET DETAIL OVERLAY PANEL ═══════  -->
 <div class="overlay-backdrop" id="detail-overlay" onclick="closeDetailPanel(event)">
   <div class="detail-panel" id="detail-panel">
     <button class="detail-close" onclick="closeDetailPanel()">✕</button>

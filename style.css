@@ -3,7 +3,7 @@
       --brand-navy:   #0D1B3E;
       --brand-gold:   #C9922A;
       --brand-gold-light: #F5DFA0;
-      --brand-cream:  #FAF8F3;
+      --brand-cream:  #faf8f3;
       --brand-white:  #FFFFFF;
 
       /* Semantic colors */
@@ -68,6 +68,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html { font-size: 16px; scroll-behavior: smooth; }
+    select {
+      -webkit-appearance: none;  /* Chrome, Safari, newer Edge */
+      -moz-appearance: none;     /* Firefox */
+      appearance: none;          /* Standard syntax */
+    }
 
     body {
       font-family: var(--font-body);
@@ -127,11 +132,14 @@
     }
 
     .auth-logo-icon {
-      width: 48px; height: 48px;
-      background: var(--brand-gold);
+      width: 48px; height: fit-content;
+      background: transparent;
       border-radius: var(--radius-md);
       display: flex; align-items: center; justify-content: center;
       font-size: 1.4rem;
+    }
+    .webIcon{
+      width: 40px;
     }
 
     .auth-logo-text {
@@ -459,6 +467,12 @@
     }
 
     .nav-item .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+    /* Sidebar Menu Icon */
+    .sidebar-icon{
+      /* width: 24px; */
+      height: 1.5cap;
+    }
 
     .sidebar-footer {
       padding: var(--space-4) var(--space-3);
@@ -984,6 +998,16 @@
 
     .loading-container { text-align: center; color: var(--gray-400); font-size: 0.85rem; }
     .loading-container p { margin-top: var(--space-3); }
+
+    .forgot-password-link {
+      display: block;
+      margin-top: var(--space-3);
+      font-size: 0.85rem;
+      color: var(--brand-navy);
+      text-decoration: underline;
+      cursor: pointer;
+      text-align: center;
+    }
 
     /* ══════════════════════════════════════════════════════════
        RESPONSIVE — MOBILE

@@ -1,6 +1,4 @@
-// ═══════════════════════════════════
-// SUPABASE CONFIG
-// ═══════════════════════════════════
+// -------- SUPABASE CONFIG ----------  //
 const SUPABASE_URL = 'https://noqfhommfvnbmlsqlaan.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_UIYBrBTGlP7bSIWERpv7dQ_sGgayUSR';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -132,7 +130,7 @@ async function handleLogout() {
 
 // This function only resets the UI and state (called by the auth listener)
 function cleanupAfterLogout() {
-  supabaseClient.removeAllChannels();   // ★ stop real-time subscriptions
+  supabaseClient.removeAllChannels();   // stop real-time subscriptions
 
   AppState.session = null;
   AppState.user = null;
@@ -188,18 +186,18 @@ async function bootApp() {
 
   buildSidebarNav(AppState.user.role);
   navigateTo('view-dashboard');
-  setupRealtime();   // ★ activate real‑time updates
+  setupRealtime();   // activate real‑time updates
 }
 
 /* ── Sidebar Nav ── */
 function buildSidebarNav(role) {
   const nav = document.getElementById('sidebar-nav');
   const items = [
-    { icon: '📊', label: 'Dashboard',    view: 'view-dashboard', roles: ['user','technician','admin'] },
-    { icon: '📝', label: 'Report Issue', view: 'view-report',    roles: ['user'] },
-    { icon: '🎫', label: 'My Tickets',   view: 'view-tickets',   roles: ['user'] },
-    { icon: '🔧', label: 'Assigned Work',view: 'view-tickets',   roles: ['technician'] },
-    { icon: '📋', label: 'All Tickets',  view: 'view-tickets',   roles: ['admin'] },
+    { icon: `<img class="sidebar-icon" src="./Assets/dashboard.png"/>`, label: 'Dashboard',    view: 'view-dashboard', roles: ['user','technician','admin'] },
+    { icon: `<img class="sidebar-icon" src="./Assets/report.png"/>`, label: 'Report Issue', view: 'view-report',    roles: ['user'] },
+    { icon: `<img class="sidebar-icon" src="./Assets/tickets.png"/>`, label: 'My Tickets',   view: 'view-tickets',   roles: ['user'] },
+    { icon: `<img class="sidebar-icon" src="./Assets/settings.png"/>`, label: 'Assigned Work',view: 'view-tickets',   roles: ['technician'] },
+    { icon: '<img class="sidebar-icon" src="./Assets/tickets.png"/>', label: 'All Tickets',  view: 'view-tickets',   roles: ['admin'] },
   ];
 
   nav.innerHTML = '<div class="nav-section-label">Main Menu</div>';
